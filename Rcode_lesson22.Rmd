@@ -1,16 +1,21 @@
-# ==================================
-# N736 Lesson 22 - Repeated Measures ANOVA
-#
-# dated 11/12/2017
-# Melinda Higgins, PhD
-# 
-# ==================================
+---
+title: "Lesson 22 - Repeated Measures ANOVA"
+author: "Melinda K. Higgins, PhD."
+date: "November 12, 2017"
+output: html_document
+---
 
-# ==================================
-# we're be working with the 
-# helpmkh dataset
-# ==================================
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = TRUE)
+knitr::opts_chunk$set(warning = TRUE)
+```
 
+## Load data and create subset
+
+Using `tidyverse` and `haven` load the dataset and create a new subset for this lesson
+
+```{r}
 library(tidyverse)
 library(haven)
 
@@ -18,27 +23,52 @@ helpdat <- haven::read_spss("helpmkh.sav")
 
 h1 <- helpdat %>%
   select(id, pcs, pcs1, pcs2, pcs3, pcs4)
+```
 
-# see https://gribblelab.wordpress.com/2009/03/09/repeated-measures-anova-using-r/
-# also see https://biostats.w.uib.no/test-for-sphericity-mauchly-test/
+## Running RM-ANOVA in R
 
+There are a few helpful websites with information and examples on running repeated meausures analysis of variance (RM-ANOVA) in R. See these 2 websites:
+
+* [https://gribblelab.wordpress.com/2009/03/09/repeated-measures-anova-using-r/](https://gribblelab.wordpress.com/2009/03/09/repeated-measures-anova-using-r/)
+* [https://biostats.w.uib.no/test-for-sphericity-mauchly-test/](https://biostats.w.uib.no/test-for-sphericity-mauchly-test/)
+
+The code I show below is based on these 2 examples - these use the `car` package.
+
+```{r}
+# extract only the 5 pcs columns 
+# for times 1-5
+# and convert it to matrix format which is needed for lm()
 h2 <- h1[,2:6]
 h2 <- as.matrix(h2)
 
+# use lm to get a model of 5 pcs columns
 m1 <- lm(h2 ~ 1)
 m1
 
+# create a time factor for the design
 tfactor <- factor(c("t0","t1","t2","t3","t4"))
 
 library(car)
-
-m1.aov <- Anova(m1, 
+m1.aov <- car::Anova(m1, 
                 idata = data.frame(tfactor),
                 idesign = ~tfactor, 
                 type="III")
-#summary(m1.aov, multivariate=FALSE)
-summary(m1.aov, multivariate=TRUE)
 
+#summary(m1.aov, multivariate=FALSE)
+
+# print complete results of the RM-ANOVA
+summary(m1.aov, multivariate=TRUE)
+```
+
+## Plots of Means Over Time with Confidence Intervals
+
+This next set of code comes from an example at the Cookbook for R website:
+
+* see [http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/](http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/)
+
+The code below creates a new function called `summarySE` for plotting the means +/- the SE (standard error)
+
+```{r}
 # restructure into long format
 
 h1long <- h1 %>%
@@ -113,3 +143,5 @@ ggplot(h1se, aes(x=time, y=pcsvalue)) +
   xlab("Time Points") +
   ylab("Physical Component Score (SF-36 PCS)") +
   ggtitle("PCS Means and CI's Over Time")
+```
+
